@@ -15,7 +15,10 @@
 
 @implementation P2PTapWarViewController
 
-@synthesize startQuitButton, playerTapCountLabel, opponentTapCountLabel;
+#pragma mark properties
+@synthesize startQuitButton;
+@synthesize playerTapCountLabel;
+@synthesize opponentTapCountLabel;
 
 /*
 // The designated initializer. Override to perform setup that is required before the view is loaded.
@@ -28,7 +31,6 @@
 */
 
 #pragma mark game logic
-//START:code.P2PTapWarViewController.updatetapcountinithostandjoingame
 -(void) updateTapCountLabels {
 	playerTapCountLabel.text =
 		[NSString stringWithFormat:@"%d", playerTapCount];
@@ -65,9 +67,8 @@
 	startQuitButton.title = @"Quit";
 	[self updateTapCountLabels];
 }
-//END:code.P2PTapWarViewController.updatetapcountinithostandjoingame
 
-//START:code.P2PTapWarViewController.endgamemethods
+
 -(void) showEndGameAlert {	
 	BOOL playerWins = playerTapCount > opponentTapCount;
 	UIAlertView *endGameAlert = [[UIAlertView alloc]
@@ -91,22 +92,19 @@
 
 
 #pragma mark UI event handlers
-
-//START:code.P2PTapWarViewController.handlequittapped
 -(IBAction) handleStartQuitTapped {
 	if (! opponentID) {
 		actingAsHost = YES;
-		GKPeerPickerController *peerPickerController =
-			[[GKPeerPickerController alloc] init];
+        // peerPickerController is released in peerPickerController:didConnectPeer:toSession: 
+        // and in peerPickerControllerDidCancel:
+		GKPeerPickerController *peerPickerController = [[GKPeerPickerController alloc] init];
 		peerPickerController.delegate = self;
-		peerPickerController.connectionTypesMask =
-			GKPeerPickerConnectionTypeNearby;
+		peerPickerController.connectionTypesMask = GKPeerPickerConnectionTypeNearby;
 		[peerPickerController show];
 	}
 }
-//END:code.P2PTapWarViewController.handlequittapped
 
-//START:code.P2PTapWarViewController.handleviewtapped
+
 -(IBAction) handleTapViewTapped {
 	playerTapCount++;
 	[self updateTapCountLabels];
@@ -129,11 +127,9 @@
 	if (playerWins) 
 		[self endGame];
 }
-//END:code.P2PTapWarViewController.handleviewtapped
+
 
 #pragma mark GKPeerPickerControllerDelegate methods
-
-//START:code.P2PTapWarViewController.sessionforconnectiontype
 -(GKSession*) peerPickerController: (GKPeerPickerController*) controller 
 		  sessionForConnectionType: (GKPeerPickerConnectionType) type {
 	if (!gkSession) {
@@ -145,7 +141,6 @@
 	}
 	return gkSession;
 }
-//END:code.P2PTapWarViewController.sessionforconnectiontype
 
 
 - (void)peerPickerController:(GKPeerPickerController *)picker
@@ -163,8 +158,6 @@
 
 
 #pragma mark GKSessionDelegate methods
-
-//START:code.P2PTapWarViewController.peerdidchangestate
 - (void)session:(GKSession *)session peer:(NSString *)peerID
 	didChangeState:(GKPeerConnectionState)state {
     switch (state) 
@@ -176,15 +169,13 @@
 			break; 
     } 
 }
-//END:code.P2PTapWarViewController.peerdidchangestate
 
 
-//START:code.P2PTapWarViewController.didreceiveconnectionrequestfrompeer
 - (void)session:(GKSession *)session
 		didReceiveConnectionRequestFromPeer:(NSString *)peerID {
 	actingAsHost = NO;
 }
-//END:code.P2PTapWarViewController.didreceiveconnectionrequestfrompeer
+
 
 - (void)session:(GKSession *)session connectionWithPeerFailed:(NSString *)peerID withError:(NSError *)error {
 	NSLog (@"session:connectionWithPeerFailed:withError:");	
@@ -195,12 +186,10 @@
 }
 
 # pragma mark receive data from session
-
 /* receive data from a peer. callbacks here are set by calling
  [session setDataHandler: self context: whatever];
  when accepting a connection from another peer (ie, when didChangeState sends GKPeerStateConnected)
  */
-//START:code.P2PTapWarViewController.receivedatafrompeerinsessioncontext
 - (void) receiveData: (NSData*) data fromPeer: (NSString*) peerID
 		   inSession: (GKSession*) session context: (void*) context {
 	NSKeyedUnarchiver *unarchiver =
@@ -217,12 +206,9 @@
 	}
 	[unarchiver release];
 }
-//END:code.P2PTapWarViewController.receivedatafrompeerinsessioncontext
-
 
 
 #pragma mark vc methods
-
 /*
 // Implement loadView to create a view hierarchy programmatically, without using a nib.
 - (void)loadView {
@@ -245,12 +231,25 @@
 }
 */
 
+
+#pragma mark memory management methods
 - (void)didReceiveMemoryWarning {
 	// Releases the view if it doesn't have a superview.
     [super didReceiveMemoryWarning];
 	
 	// Release any cached data, images, etc that aren't in use.
 }
+
+// set properties to nil, which also releases them
+- (void)setView:(UIView *)newView {
+    if (nil == newView) {
+        self.startQuitButton = nil;
+        self.playerTapCountLabel = nil;
+        self.opponentTapCountLabel = nil;
+    }    
+    [super setView:newView];
+}
+
 
 - (void)viewDidUnload {
 	// Release any retained subviews of the main view.
@@ -259,6 +258,10 @@
 
 
 - (void)dealloc {
+    [startQuitButton release], startQuitButton = nil;
+    [playerTapCountLabel release], playerTapCountLabel = nil;
+    [opponentTapCountLabel release], opponentTapCountLabel = nil;
+    
     [super dealloc];
 }
 
