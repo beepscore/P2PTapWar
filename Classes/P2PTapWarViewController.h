@@ -16,14 +16,15 @@
 
 #define AMIPHD_P2P_SESSION_ID @"amiphd-p2p"
 #define TIME_KEY @"time"
-//START:code.P2PTapWarViewController.protocolkeys
+//protocolkeys
 #define START_GAME_KEY @"startgame"
 #define END_GAME_KEY @"endgame"
 #define TAP_COUNT_KEY @"taps"
-//END:code.P2PTapWarViewController.protocolkeys
+
 #define WINNING_TAP_COUNT 50
 
-@interface P2PTapWarViewController : UIViewController <GKSessionDelegate, GKPeerPickerControllerDelegate> {
+@interface P2PTapWarViewController : UIViewController 
+<GKSessionDelegate, GKPeerPickerControllerDelegate> {
 
 	GKSession *gkSession;
 

@@ -21,21 +21,21 @@
 @synthesize opponentTapCountLabel;
 
 /*
-// The designated initializer. Override to perform setup that is required before the view is loaded.
-- (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil {
-    if (self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil]) {
-        // Custom initialization
-    }
-    return self;
-}
-*/
+ // The designated initializer. Override to perform setup that is required before the view is loaded.
+ - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil {
+ if (self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil]) {
+ // Custom initialization
+ }
+ return self;
+ }
+ */
 
 #pragma mark game logic
 -(void) updateTapCountLabels {
 	playerTapCountLabel.text =
-		[NSString stringWithFormat:@"%d", playerTapCount];
+    [NSString stringWithFormat:@"%d", playerTapCount];
 	opponentTapCountLabel.text =
-		[NSString stringWithFormat:@"%d", opponentTapCount];
+    [NSString stringWithFormat:@"%d", opponentTapCount];
 }
 
 -(void) initGame {
@@ -47,12 +47,12 @@
 	[self initGame];
 	NSMutableData *message = [[NSMutableData alloc] init];
 	NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc]
-		initForWritingWithMutableData:message];
+                                 initForWritingWithMutableData:message];
 	[archiver encodeBool:YES forKey:START_GAME_KEY];
 	[archiver finishEncoding];
 	NSError *sendErr = nil;
 	[gkSession sendDataToAllPeers: message
-			withDataMode:GKSendDataReliable error:&sendErr];
+                     withDataMode:GKSendDataReliable error:&sendErr];
 	if (sendErr)
 		NSLog (@"send greeting failed: %@", sendErr);
 	// change state of startQuitButton
@@ -72,12 +72,12 @@
 -(void) showEndGameAlert {	
 	BOOL playerWins = playerTapCount > opponentTapCount;
 	UIAlertView *endGameAlert = [[UIAlertView alloc]
-		initWithTitle: playerWins ? @"Victory!" : @"Defeat!"
-		message: playerWins ? @"Your thumbs have emerged supreme!":
-			@"Your thumbs have been laid low"
-		delegate:nil
-		cancelButtonTitle:@"OK"
-		otherButtonTitles:nil];
+                                 initWithTitle: playerWins ? @"Victory!" : @"Defeat!"
+                                 message: playerWins ? @"Your thumbs have emerged supreme!":
+                                 @"Your thumbs have been laid low"
+                                 delegate:nil
+                                 cancelButtonTitle:@"OK"
+                                 otherButtonTitles:nil];
 	[endGameAlert show];
 	[endGameAlert release];
 }
@@ -92,11 +92,13 @@
 
 
 #pragma mark UI event handlers
+// when Find button is tapped, show peerPicker.  Ref Dudney sec 13.5
 -(IBAction) handleStartQuitTapped {
 	if (! opponentID) {
 		actingAsHost = YES;
         // peerPickerController is released in peerPickerController:didConnectPeer:toSession: 
         // and in peerPickerControllerDidCancel:
+        // Clang warns of potential leak.  Ok to ignore?
 		GKPeerPickerController *peerPickerController = [[GKPeerPickerController alloc] init];
 		peerPickerController.delegate = self;
 		peerPickerController.connectionTypesMask = GKPeerPickerConnectionTypeNearby;
@@ -113,13 +115,13 @@
 	// send tap count to peer
 	NSMutableData *message = [[NSMutableData alloc] init];
 	NSKeyedArchiver *archiver =
-		[[NSKeyedArchiver alloc] initForWritingWithMutableData:message];
+    [[NSKeyedArchiver alloc] initForWritingWithMutableData:message];
 	[archiver encodeInt:playerTapCount forKey: TAP_COUNT_KEY];
 	if (playerWins)
 		[archiver encodeBool:YES forKey:END_GAME_KEY];
 	[archiver finishEncoding];
 	GKSendDataMode sendMode =
-		playerWins ? GKSendDataReliable : GKSendDataUnreliable;
+    playerWins ? GKSendDataReliable : GKSendDataUnreliable;
 	[gkSession sendDataToAllPeers: message withDataMode:sendMode error:NULL];
 	[archiver release];
 	[message release];
@@ -130,13 +132,16 @@
 
 
 #pragma mark GKPeerPickerControllerDelegate methods
--(GKSession*) peerPickerController: (GKPeerPickerController*) controller 
-		  sessionForConnectionType: (GKPeerPickerConnectionType) type {
+-(GKSession*) peerPickerController:(GKPeerPickerController*)controller 
+		  sessionForConnectionType:(GKPeerPickerConnectionType)type {
 	if (!gkSession) {
 		gkSession = [[GKSession alloc]
-			 initWithSessionID:AMIPHD_P2P_SESSION_ID
-			 displayName:nil
-			 sessionMode:GKSessionModePeer];
+                     initWithSessionID:AMIPHD_P2P_SESSION_ID
+                     displayName:nil
+                     sessionMode:GKSessionModePeer];
+        
+        // ????: should we autorelease gkSession here?
+        
 		gkSession.delegate = self;
 	}
 	return gkSession;
@@ -144,9 +149,13 @@
 
 
 - (void)peerPickerController:(GKPeerPickerController *)picker
-			  didConnectPeer:(NSString *)peerID toSession:(GKSession *)session {
+			  didConnectPeer:(NSString *)peerID
+                   toSession:(GKSession *)session {
 	NSLog ( @"connected to peer %@", peerID);
-	[session retain]; 	 // TODO: who releases this?
+	
+    // TODO: who releases session?
+    [session retain];
+    
 	[picker dismiss];
 	[picker release];
 }
@@ -158,8 +167,9 @@
 
 
 #pragma mark GKSessionDelegate methods
-- (void)session:(GKSession *)session peer:(NSString *)peerID
-	didChangeState:(GKPeerConnectionState)state {
+- (void)session:(GKSession *)session
+           peer:(NSString *)peerID
+ didChangeState:(GKPeerConnectionState)state {
     switch (state) 
     { 
         case GKPeerStateConnected: 
@@ -172,16 +182,19 @@
 
 
 - (void)session:(GKSession *)session
-		didReceiveConnectionRequestFromPeer:(NSString *)peerID {
+didReceiveConnectionRequestFromPeer:(NSString *)peerID {
 	actingAsHost = NO;
 }
 
 
-- (void)session:(GKSession *)session connectionWithPeerFailed:(NSString *)peerID withError:(NSError *)error {
+- (void)session:(GKSession *)session 
+connectionWithPeerFailed:(NSString *)peerID 
+      withError:(NSError *)error {
 	NSLog (@"session:connectionWithPeerFailed:withError:");	
 }
 
-- (void)session:(GKSession *)session didFailWithError:(NSError *)error {
+- (void)session:(GKSession *)session 
+didFailWithError:(NSError *)error {
 	NSLog (@"session:didFailWithError:");		
 }
 
@@ -190,10 +203,12 @@
  [session setDataHandler: self context: whatever];
  when accepting a connection from another peer (ie, when didChangeState sends GKPeerStateConnected)
  */
-- (void) receiveData: (NSData*) data fromPeer: (NSString*) peerID
-		   inSession: (GKSession*) session context: (void*) context {
+- (void) receiveData:(NSData*)data 
+            fromPeer:(NSString*)peerID
+		   inSession:(GKSession*)session 
+             context:(void*)context {
 	NSKeyedUnarchiver *unarchiver =
-		[[NSKeyedUnarchiver alloc] initForReadingWithData:data];
+    [[NSKeyedUnarchiver alloc] initForReadingWithData:data];
 	if ([unarchiver containsValueForKey:TAP_COUNT_KEY]) {
 		opponentTapCount = [unarchiver decodeIntForKey:TAP_COUNT_KEY];
 		[self updateTapCountLabels];
@@ -208,28 +223,28 @@
 }
 
 
-#pragma mark vc methods
+#pragma mark view controller methods
 /*
-// Implement loadView to create a view hierarchy programmatically, without using a nib.
-- (void)loadView {
-}
-*/
+ // Implement loadView to create a view hierarchy programmatically, without using a nib.
+ - (void)loadView {
+ }
+ */
 
 
 /*
-// Implement viewDidLoad to do additional setup after loading the view, typically from a nib.
-*/
+ // Implement viewDidLoad to do additional setup after loading the view, typically from a nib.
+ */
 - (void)viewDidLoad {
     [super viewDidLoad];
- }
+}
 
 /*
-// Override to allow orientations other than the default portrait orientation.
-- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation {
-    // Return YES for supported orientations
-    return (interfaceOrientation == UIInterfaceOrientationPortrait);
-}
-*/
+ // Override to allow orientations other than the default portrait orientation.
+ - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation {
+ // Return YES for supported orientations
+ return (interfaceOrientation == UIInterfaceOrientationPortrait);
+ }
+ */
 
 
 #pragma mark memory management methods
